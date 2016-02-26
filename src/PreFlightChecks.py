@@ -1,59 +1,45 @@
-import glob
 import json
 import os
 import os.path
+import datetime
 from xml.dom import minidom
-import zipfile
+import sys
 import checkMethods
 import logging
 
+script = sys.argv[0]
+filePath = sys.argv[1]
+CFBundleShortVersionString = sys.argv[2]
+CFBundleVersion = sys.argv[3]
 
-# picking zip file from the directory
-ZipFileName = raw_input("Enter full path to zip file (including .zip file name:")
-fh = open(ZipFileName, 'rb')
-z = zipfile.ZipFile(fh)
+print (" Script name: " + sys.argv[0] + "\n" + " FilePath: " + sys.argv[1] + "\n" + " CFBundleShortVersionString: " +
+       sys.argv[2] + "\n" + " CFBundleVersion: " + sys.argv[3]) + "\n"
 
-zipFileName = str(z.namelist()[0])
+rootFolder = filePath + "/Products/Applications/GLA.app/"
 
-# assigning a name to the extracted zip folder
-DestZipFolderName = raw_input("Assign destination folder a name: ")
-DestPathName = raw_input("Enter destination directory: ")
-DestPath = DestPathName + "\\" + DestZipFolderName
-
-for name in z.namelist():
-    outpath = DestPath
-    z.extract(name, outpath)
-fh.close()
-
-zipFilePath = outpath + "/"
-root = outpath
-rootFolder = outpath + "/" + zipFileName + "Products/Applications/GLA.app/"
-
-CFBundleShortVersionString = raw_input("Please enter the CFBundleShortVersionString: ")
-CFBundleVersion = raw_input("Please enter the CFBundleVersion: ")
-
-logging.basicConfig(filename='error.log',
+logging.basicConfig(filename='errors.log',
                     format='%(asctime)s %(message)s ',
                     datefmt='%I:%M:%S',
                     filemode='w',
                     level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler())
 
-logging.info('Start iOS Preflight Checks\n')
+now = datetime.datetime.now()
+
+logging.info(now.strftime("%Y-%m-%d") + ' - Start iOS Preflight checks\n')
 
 
 def initialcheck():
     '''
     First and vital check
     '''
-    print "zipfilepath = " + zipFilePath
-    if glob.glob(zipFilePath + "GLARelease*"):
+    if (filePath + "/GLARelease*"):
 
-        print ("1st condition satisfied - x.archive prefixed with 'GLARelease'")
-        print("")
+        logging.info("1st condition satisfied - x.archive prefixed with 'GLARelease'")
+        logging.info("")
     else:
-        print ("Error - STOP! Don't go any further")
-        quit()
+        logging.info("Error - STOP! Don't go any further")
+        sys.exit(1)
 
 
 def check1():
@@ -71,7 +57,6 @@ def check1():
     try:
         with open(fileName) as data_file:
             checkData1 = json.load(data_file)
-        # pprint(data) - this prints out the jSON to the console
 
         rsids = checkData1["analytics"]["rsids"]
         server = checkData1["analytics"]["server"]
@@ -81,7 +66,7 @@ def check1():
         logging.info("")
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check2():
@@ -89,7 +74,7 @@ def check2():
     check2 Locate all images prefixed with "AppIcon" and check that these are in fact valid app icon images)
     '''
     logging.info("Check 2: AppIcon's")
-    logging.info("MANUAL checkS NEEDED - Goto: " + rootFolder)
+    logging.info("MANUAL check is needed - Goto: " + rootFolder)
 
 
 def check3():
@@ -107,26 +92,26 @@ def check3():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkListAny(
-            "com.apple.developer.associated-domains",
-            ["activitycontinuation:www.theguardian.com", "applinks:www.theguardian.com"],
-            data["com.apple.developer.associated-domains"]
+                "com.apple.developer.associated-domains",
+                ["activitycontinuation:www.theguardian.com", "applinks:www.theguardian.com"],
+                data["com.apple.developer.associated-domains"]
         )
 
         checkMethods.checkValue(
-            "com.apple.security.application-groups",
-            ["group.uk.co.guardian.iphone2"],
-            data["com.apple.security.application-groups"]
+                "com.apple.security.application-groups",
+                ["group.uk.co.guardian.iphone2"],
+                data["com.apple.security.application-groups"]
         )
 
         checkMethods.checkValue(
-            "keychain-access-groups",
-            ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
-            data["keychain-access-groups"]
+                "keychain-access-groups",
+                ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
+                data["keychain-access-groups"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check4():
@@ -149,72 +134,72 @@ def check4():
             keyElems = xmldoc.getElementsByTagName("key")
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "ApplicationIdentifierPrefix",
-                "U9LTYR56M6"
+                    keyElems,
+                    "ApplicationIdentifierPrefix",
+                    "U9LTYR56M6"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "application-identifier",
-                "U9LTYR56M6.uk.co.guardian.iphone2"
+                    keyElems,
+                    "application-identifier",
+                    "U9LTYR56M6.uk.co.guardian.iphone2"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "aps-environment",
-                "production"
+                    keyElems,
+                    "aps-environment",
+                    "production"
             )
 
             checkMethods.checkXMLValueTrue(
-                keyElems,
-                "beta-reports-active"
+                    keyElems,
+                    "beta-reports-active"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.associated-domains",
-                "*"
+                    keyElems,
+                    "com.apple.developer.associated-domains",
+                    "*"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.team-identifier",
-                "998P9U5NGJ"
+                    keyElems,
+                    "com.apple.developer.team-identifier",
+                    "998P9U5NGJ"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.security.application-groups",
-                "group.uk.co.guardian.iphone2"
+                    keyElems,
+                    "com.apple.security.application-groups",
+                    "group.uk.co.guardian.iphone2"
             )
 
             checkMethods.checkXMLValueFalse(
-                keyElems,
-                "get-task-allow"
+                    keyElems,
+                    "get-task-allow"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "keychain-access-groups",
-                "U9LTYR56M6.*"
+                    keyElems,
+                    "keychain-access-groups",
+                    "U9LTYR56M6.*"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "Name",
-                "Guardian Live App Store"
+                    keyElems,
+                    "Name",
+                    "Guardian Live App Store"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "TeamName",
-                "Guardian News & Media Ltd"
+                    keyElems,
+                    "TeamName",
+                    "Guardian News & Media Ltd"
             )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check5():
@@ -237,31 +222,31 @@ def check5():
             keyElems = xmldoc.getElementsByTagName("key")
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.associated-domains",
-                "activitycontinuation:www.theguardian.com"
+                    keyElems,
+                    "com.apple.developer.associated-domains",
+                    "activitycontinuation:www.theguardian.com"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.security.application-groups",
-                "group.uk.co.guardian.iphone2"
+                    keyElems,
+                    "com.apple.security.application-groups",
+                    "group.uk.co.guardian.iphone2"
             )
 
             checkMethods.checkXMLValueTrue(
-                keyElems,
-                "beta-reports-active"
+                    keyElems,
+                    "beta-reports-active"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "keychain-access-groups",
-                "$(AppIdentifierPrefix)uk.co.guardian.SharedKeychain"
+                    keyElems,
+                    "keychain-access-groups",
+                    "$(AppIdentifierPrefix)uk.co.guardian.SharedKeychain"
             )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check6():
@@ -279,44 +264,44 @@ def check6():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "BuildTier",
-            "release",
-            data["BuildTier"]
+                "BuildTier",
+                "release",
+                data["BuildTier"]
         )
 
         checkMethods.checkValue(
-            "CFBundleIdentifier",
-            "uk.co.guardian.iphone2",
-            data["CFBundleIdentifier"]
+                "CFBundleIdentifier",
+                "uk.co.guardian.iphone2",
+                data["CFBundleIdentifier"]
         )
 
         checkMethods.checkValue(
-            "CFBundleShortVersionString",
-            CFBundleShortVersionString,
-            data["CFBundleShortVersionString"]
+                "CFBundleShortVersionString",
+                CFBundleShortVersionString,
+                data["CFBundleShortVersionString"]
         )
 
         checkMethods.checkValue(
-            "CFBundleVersion",
-            CFBundleVersion,
-            data["CFBundleVersion"]
+                "CFBundleVersion",
+                CFBundleVersion,
+                data["CFBundleVersion"]
         )
 
         checkMethods.checkListAny(
-            "UIDeviceFamily",
-            [1, 2],
-            data["UIDeviceFamily"]
+                "UIDeviceFamily",
+                [1, 2],
+                data["UIDeviceFamily"]
         )
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check7():
     '''check7 - Locate the "templates-3.x.zip" file, the version number must match the "CFBundleShortVersionString"
     '''
 
-    logging.info ("Check 7: GLA.app - templates-3.x.zip")
+    logging.info("Check 7: GLA.app - templates-3.x.zip")
     logging.info('\n')
 
     fileName = rootFolder + "templates-" + CFBundleShortVersionString + ".zip"
@@ -328,6 +313,7 @@ def check7():
         # logging.info("PASSED - " + templatesFileName)
     else:
         logging.info("ERROR: - " + fileName)
+        sys.exit(1)
 
 
 # Locate to the "Watch" folder and "Show Package Contents" for GLAWatchApp2
@@ -348,20 +334,20 @@ def check8():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "application-identifier",
-            "U9LTYR56M6.uk.co.guardian.iphone2.watchapp",
-            data["application-identifier"]
+                "application-identifier",
+                "U9LTYR56M6.uk.co.guardian.iphone2.watchapp",
+                data["application-identifier"]
         )
 
         checkMethods.checkValue(
-            "keychain-access-groups",
-            ["U9LTYR56M6.uk.co.guardian.iphone2.watchapp"],
-            data["keychain-access-groups"]
+                "keychain-access-groups",
+                ["U9LTYR56M6.uk.co.guardian.iphone2.watchapp"],
+                data["keychain-access-groups"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check9():
@@ -384,54 +370,54 @@ def check9():
             keyElems = xmldoc.getElementsByTagName("key")
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "ApplicationIdentifierPrefix",
-                "U9LTYR56M6"
+                    keyElems,
+                    "ApplicationIdentifierPrefix",
+                    "U9LTYR56M6"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "application-identifier",
-                "U9LTYR56M6.uk.co.guardian.iphone2.watchapp"
+                    keyElems,
+                    "application-identifier",
+                    "U9LTYR56M6.uk.co.guardian.iphone2.watchapp"
             )
 
             checkMethods.checkXMLValueTrue(
-                keyElems,
-                "beta-reports-active"
+                    keyElems,
+                    "beta-reports-active"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.team-identifier",
-                "998P9U5NGJ"
+                    keyElems,
+                    "com.apple.developer.team-identifier",
+                    "998P9U5NGJ"
             )
 
             checkMethods.checkXMLValueFalse(
-                keyElems,
-                "get-task-allow"
+                    keyElems,
+                    "get-task-allow"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "keychain-access-groups",
-                "U9LTYR56M6.*"
+                    keyElems,
+                    "keychain-access-groups",
+                    "U9LTYR56M6.*"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "Name",
-                "Guardian Live WatchApp App Store"
+                    keyElems,
+                    "Name",
+                    "Guardian Live WatchApp App Store"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "TeamName",
-                "Guardian News & Media Ltd"
+                    keyElems,
+                    "TeamName",
+                    "Guardian News & Media Ltd"
             )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check10():
@@ -449,38 +435,38 @@ def check10():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "CFBundleIdentifier",
-            "uk.co.guardian.iphone2.watchapp",
-            data["CFBundleIdentifier"]
+                "CFBundleIdentifier",
+                "uk.co.guardian.iphone2.watchapp",
+                data["CFBundleIdentifier"]
         )
 
         checkMethods.checkValue(
-            "CFBundleShortVersionString",
-            CFBundleShortVersionString,
-            data["CFBundleShortVersionString"]
+                "CFBundleShortVersionString",
+                CFBundleShortVersionString,
+                data["CFBundleShortVersionString"]
         )
 
         checkMethods.checkValue(
-            "CFBundleVersion",
-            CFBundleVersion,
-            data["CFBundleVersion"]
+                "CFBundleVersion",
+                CFBundleVersion,
+                data["CFBundleVersion"]
         )
 
         checkMethods.checkValue(
-            "WKCompanionAppBundleIdentifier",
-            "uk.co.guardian.iphone2",
-            data["WKCompanionAppBundleIdentifier"]
+                "WKCompanionAppBundleIdentifier",
+                "uk.co.guardian.iphone2",
+                data["WKCompanionAppBundleIdentifier"]
         )
 
         checkMethods.checkValue(
-            "UIDeviceFamily",
-            [4],
-            data["UIDeviceFamily"]
+                "UIDeviceFamily",
+                [4],
+                data["UIDeviceFamily"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check11():
@@ -498,20 +484,20 @@ def check11():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "com.apple.security.application-groups",
-            ["group.uk.co.guardian.iphone2"],
-            data["com.apple.security.application-groups"]
+                "com.apple.security.application-groups",
+                ["group.uk.co.guardian.iphone2"],
+                data["com.apple.security.application-groups"]
         )
 
         checkMethods.checkValue(
-            "keychain-access-groups",
-            ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
-            data["keychain-access-groups"]
+                "keychain-access-groups",
+                ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
+                data["keychain-access-groups"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check12():
@@ -534,60 +520,60 @@ def check12():
             keyElems = xmldoc.getElementsByTagName("key")
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "ApplicationIdentifierPrefix",
-                "U9LTYR56M6"
+                    keyElems,
+                    "ApplicationIdentifierPrefix",
+                    "U9LTYR56M6"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "application-identifier",
-                "U9LTYR56M6.uk.co.guardian.iphone2.watchapp.extw"
+                    keyElems,
+                    "application-identifier",
+                    "U9LTYR56M6.uk.co.guardian.iphone2.watchapp.extw"
             )
 
             checkMethods.checkXMLValueTrue(
-                keyElems,
-                "beta-reports-active"
+                    keyElems,
+                    "beta-reports-active"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.team-identifier",
-                "998P9U5NGJ"
+                    keyElems,
+                    "com.apple.developer.team-identifier",
+                    "998P9U5NGJ"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.security.application-groups",
-                "group.uk.co.guardian.iphone2"
+                    keyElems,
+                    "com.apple.security.application-groups",
+                    "group.uk.co.guardian.iphone2"
             )
 
             checkMethods.checkXMLValueFalse(
-                keyElems,
-                "get-task-allow"
+                    keyElems,
+                    "get-task-allow"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "keychain-access-groups",
-                "U9LTYR56M6.*"
+                    keyElems,
+                    "keychain-access-groups",
+                    "U9LTYR56M6.*"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "Name",
-                "Guardian Live Extension WatchKit2 App Store"
+                    keyElems,
+                    "Name",
+                    "Guardian Live Extension WatchKit2 App Store"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "TeamName",
-                "Guardian News & Media Ltd"
+                    keyElems,
+                    "TeamName",
+                    "Guardian News & Media Ltd"
             )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check13():
@@ -622,20 +608,20 @@ def check13():
 
         application_groups = data["NSExtension"]["NSExtensionAttributes"]["WKAppBundleIdentifier"]
         checkMethods.checkValue(
-            "WKAppBundleIdentifier",
-            "uk.co.guardian.iphone2.watchapp",
-            application_groups
+                "WKAppBundleIdentifier",
+                "uk.co.guardian.iphone2.watchapp",
+                application_groups
         )
 
         checkMethods.checkValue(
-            "UIDeviceFamily",
-            [4],
-            data["UIDeviceFamily"]
+                "UIDeviceFamily",
+                [4],
+                data["UIDeviceFamily"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check14():
@@ -662,7 +648,7 @@ def check14():
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check15():
@@ -681,20 +667,20 @@ def check15():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "com.apple.security.application-groups",
-            ["group.uk.co.guardian.iphone2"],
-            data["com.apple.security.application-groups"]
+                "com.apple.security.application-groups",
+                ["group.uk.co.guardian.iphone2"],
+                data["com.apple.security.application-groups"]
         )
 
         checkMethods.checkValue(
-            "keychain-access-groups",
-            ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
-            data["keychain-access-groups"]
+                "keychain-access-groups",
+                ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
+                data["keychain-access-groups"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check16():
@@ -717,60 +703,60 @@ def check16():
             keyElems = xmldoc.getElementsByTagName("key")
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "ApplicationIdentifierPrefix",
-                "U9LTYR56M6"
+                    keyElems,
+                    "ApplicationIdentifierPrefix",
+                    "U9LTYR56M6"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "application-identifier",
-                "U9LTYR56M6.uk.co.guardian.iphone2.extt"
+                    keyElems,
+                    "application-identifier",
+                    "U9LTYR56M6.uk.co.guardian.iphone2.extt"
             )
 
             checkMethods.checkXMLValueTrue(
-                keyElems,
-                "beta-reports-active"
+                    keyElems,
+                    "beta-reports-active"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.team-identifier",
-                "998P9U5NGJ"
+                    keyElems,
+                    "com.apple.developer.team-identifier",
+                    "998P9U5NGJ"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.security.application-groups",
-                "group.uk.co.guardian.iphone2"
+                    keyElems,
+                    "com.apple.security.application-groups",
+                    "group.uk.co.guardian.iphone2"
             )
 
             checkMethods.checkXMLValueFalse(
-                keyElems,
-                "get-task-allow"
+                    keyElems,
+                    "get-task-allow"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "keychain-access-groups",
-                "U9LTYR56M6.*"
+                    keyElems,
+                    "keychain-access-groups",
+                    "U9LTYR56M6.*"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "Name",
-                "Guardian Live Extension Today App Store"
+                    keyElems,
+                    "Name",
+                    "Guardian Live Extension Today App Store"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "TeamName",
-                "Guardian News & Media Ltd"
+                    keyElems,
+                    "TeamName",
+                    "Guardian News & Media Ltd"
             )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check17():
@@ -789,32 +775,32 @@ def check17():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "CFBundleIdentifier",
-            "uk.co.guardian.iphone2.extt",
-            data["CFBundleIdentifier"]
+                "CFBundleIdentifier",
+                "uk.co.guardian.iphone2.extt",
+                data["CFBundleIdentifier"]
         )
 
         checkMethods.checkValue(
-            "CFBundleShortVersionString",
-            CFBundleShortVersionString,
-            data["CFBundleShortVersionString"]
+                "CFBundleShortVersionString",
+                CFBundleShortVersionString,
+                data["CFBundleShortVersionString"]
         )
 
         checkMethods.checkValue(
-            "CFBundleVersion",
-            CFBundleVersion,
-            data["CFBundleVersion"]
+                "CFBundleVersion",
+                CFBundleVersion,
+                data["CFBundleVersion"]
         )
 
         checkMethods.checkListAny(
-            "UIDeviceFamily",
-            [1, 2],
-            data["UIDeviceFamily"]
+                "UIDeviceFamily",
+                [1, 2],
+                data["UIDeviceFamily"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check18():
@@ -833,20 +819,20 @@ def check18():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "com.apple.security.application-groups",
-            ["group.uk.co.guardian.iphone2"],
-            data["com.apple.security.application-groups"]
+                "com.apple.security.application-groups",
+                ["group.uk.co.guardian.iphone2"],
+                data["com.apple.security.application-groups"]
         )
 
         checkMethods.checkValue(
-            "keychain-access-groups",
-            ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
-            data["keychain-access-groups"]
+                "keychain-access-groups",
+                ["U9LTYR56M6.uk.co.guardian.SharedKeychain"],
+                data["keychain-access-groups"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check19():
@@ -869,60 +855,60 @@ def check19():
             keyElems = xmldoc.getElementsByTagName("key")
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "ApplicationIdentifierPrefix",
-                "U9LTYR56M6"
+                    keyElems,
+                    "ApplicationIdentifierPrefix",
+                    "U9LTYR56M6"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "application-identifier",
-                "U9LTYR56M6.uk.co.guardian.iphone2.extw"
+                    keyElems,
+                    "application-identifier",
+                    "U9LTYR56M6.uk.co.guardian.iphone2.extw"
             )
 
             checkMethods.checkXMLValueTrue(
-                keyElems,
-                "beta-reports-active"
+                    keyElems,
+                    "beta-reports-active"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.team-identifier",
-                "998P9U5NGJ"
+                    keyElems,
+                    "com.apple.developer.team-identifier",
+                    "998P9U5NGJ"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.security.application-groups",
-                "group.uk.co.guardian.iphone2"
+                    keyElems,
+                    "com.apple.security.application-groups",
+                    "group.uk.co.guardian.iphone2"
             )
 
             checkMethods.checkXMLValueFalse(
-                keyElems,
-                "get-task-allow"
+                    keyElems,
+                    "get-task-allow"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "keychain-access-groups",
-                "U9LTYR56M6.*"
+                    keyElems,
+                    "keychain-access-groups",
+                    "U9LTYR56M6.*"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "Name",
-                "Guardian Live Extension WatchKit App Store"
+                    keyElems,
+                    "Name",
+                    "Guardian Live Extension WatchKit App Store"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "TeamName",
-                "Guardian News & Media Ltd"
+                    keyElems,
+                    "TeamName",
+                    "Guardian News & Media Ltd"
             )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check20():
@@ -940,39 +926,39 @@ def check20():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "CFBundleIdentifier",
-            "uk.co.guardian.iphone2.extw",
-            data["CFBundleIdentifier"]
+                "CFBundleIdentifier",
+                "uk.co.guardian.iphone2.extw",
+                data["CFBundleIdentifier"]
         )
 
         checkMethods.checkValue(
-            "CFBundleShortVersionString",
-            CFBundleShortVersionString,
-            data["CFBundleShortVersionString"]
+                "CFBundleShortVersionString",
+                CFBundleShortVersionString,
+                data["CFBundleShortVersionString"]
         )
 
         checkMethods.checkValue(
-            "CFBundleVersion",
-            CFBundleVersion,
-            data["CFBundleVersion"]
+                "CFBundleVersion",
+                CFBundleVersion,
+                data["CFBundleVersion"]
         )
 
         application_groups = data["NSExtension"]["NSExtensionAttributes"]["WKAppBundleIdentifier"]
         checkMethods.checkValue(
-            "WKAppBundleIdentifier",
-            "uk.co.guardian.iphone2.watchapp",
-            application_groups
+                "WKAppBundleIdentifier",
+                "uk.co.guardian.iphone2.watchapp",
+                application_groups
         )
 
         checkMethods.checkListAny(
-            "UIDeviceFamily",
-            [1],
-            data["UIDeviceFamily"]
+                "UIDeviceFamily",
+                [1],
+                data["UIDeviceFamily"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check21():
@@ -991,20 +977,20 @@ def check21():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "application-identifier",
-            "U9LTYR56M6.uk.co.guardian.iphone2.watchapp",
-            data["application-identifier"]
+                "application-identifier",
+                "U9LTYR56M6.uk.co.guardian.iphone2.watchapp",
+                data["application-identifier"]
         )
 
         checkMethods.checkValue(
-            "keychain-access-groups",
-            ["U9LTYR56M6.uk.co.guardian.iphone2.watchapp"],
-            data["keychain-access-groups"]
+                "keychain-access-groups",
+                ["U9LTYR56M6.uk.co.guardian.iphone2.watchapp"],
+                data["keychain-access-groups"]
         )
         logging.info('\n')
     except IOError:
-        exit("ERROR - check the file: " + fileName)
-        logging.info('\n')
+        logging.error("ERROR file missing: " + fileName)
+        sys.exit(1)
 
 
 def check22():
@@ -1027,54 +1013,54 @@ def check22():
             keyElems = xmldoc.getElementsByTagName("key")
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "ApplicationIdentifierPrefix",
-                "U9LTYR56M6"
+                    keyElems,
+                    "ApplicationIdentifierPrefix",
+                    "U9LTYR56M6"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "application-identifier",
-                "U9LTYR56M6.uk.co.guardian.iphone2.watchapp"
+                    keyElems,
+                    "application-identifier",
+                    "U9LTYR56M6.uk.co.guardian.iphone2.watchapp"
             )
 
             checkMethods.checkXMLValueTrue(
-                keyElems,
-                "beta-reports-active"
+                    keyElems,
+                    "beta-reports-active"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "com.apple.developer.team-identifier",
-                "998P9U5NGJ"
+                    keyElems,
+                    "com.apple.developer.team-identifier",
+                    "998P9U5NGJ"
             )
 
             checkMethods.checkXMLValueFalse(
-                keyElems,
-                "get-task-allow"
+                    keyElems,
+                    "get-task-allow"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "keychain-access-groups",
-                "U9LTYR56M6.*"
+                    keyElems,
+                    "keychain-access-groups",
+                    "U9LTYR56M6.*"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "Name",
-                "Guardian Live WatchApp App Store"
+                    keyElems,
+                    "Name",
+                    "Guardian Live WatchApp App Store"
             )
 
             checkMethods.checkXMLValue(
-                keyElems,
-                "TeamName",
-                "Guardian News & Media Ltd"
+                    keyElems,
+                    "TeamName",
+                    "Guardian News & Media Ltd"
             )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName)
-        exit
+        sys.exit(1)
 
 
 def check23():
@@ -1092,38 +1078,39 @@ def check23():
         data = checkMethods.loadPlist(fileName)
 
         checkMethods.checkValue(
-            "CFBundleIdentifier",
-            "uk.co.guardian.iphone2.watchapp",
-            data["CFBundleIdentifier"]
+                "CFBundleIdentifier",
+                "uk.co.guardian.iphone2.watchapp",
+                data["CFBundleIdentifier"]
         )
 
         checkMethods.checkValue(
-            "CFBundleShortVersionString",
-            CFBundleShortVersionString,
-            data["CFBundleShortVersionString"]
+                "CFBundleShortVersionString",
+                CFBundleShortVersionString,
+                data["CFBundleShortVersionString"]
         )
 
         checkMethods.checkValue(
-            "CFBundleVersion",
-            CFBundleVersion,
-            data["CFBundleVersion"]
+                "CFBundleVersion",
+                CFBundleVersion,
+                data["CFBundleVersion"]
         )
 
         checkMethods.checkValue(
-            "WKCompanionAppBundleIdentifier",
-            "uk.co.guardian.iphone2",
-            data["WKCompanionAppBundleIdentifier"]
+                "WKCompanionAppBundleIdentifier",
+                "uk.co.guardian.iphone2",
+                data["WKCompanionAppBundleIdentifier"]
         )
 
         checkMethods.checkListAny(
-            "UIDeviceFamily",
-            [4],
-            data["UIDeviceFamily"]
+                "UIDeviceFamily",
+                [4],
+                data["UIDeviceFamily"]
         )
         logging.info('\n')
     except IOError:
         logging.error("ERROR file missing: " + fileName).upper()
-        exit
+        sys.exit(1)
+
 
 # Go through the Checks
 initialcheck(),
@@ -1133,4 +1120,4 @@ check11(), check12(), check13(), check14(), check15(),
 check16(), check17(), check18(), check19(), check20(),
 check21(), check22(), check23()
 
-logging.info('Finished iOS Preflight Checks\n')
+logging.info(now.strftime("%Y-%m-%d %H:%M") + 'Finished iOS Preflight Checks\n')

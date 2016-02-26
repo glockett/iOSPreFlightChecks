@@ -6,6 +6,8 @@ import os.path
 from xml.dom import Node
 import logging
 
+import sys
+
 
 def next_element(node):
     '''
@@ -176,5 +178,5 @@ def checkFileExists(fileName):
          pass
     else:
         logging.error("ERROR file missing: " + fileName)
-        exit()
+        sys.exit(1)
 
